@@ -12,7 +12,6 @@ workflows:
   # see https://circleci.com/blog/automatically-deploy-private-docker-images-to-aws-ecr/
   build_and_push_image:
     jobs:
-      build:
         - aws-ecr/build-and-push-image:
             account-url: AWS_ECR_ACCOUNT_URL
             aws-access-key-id: AWS_ACCESS_KEY_ID
@@ -23,11 +22,11 @@ workflows:
             region: AWS_REGION
             repo: my-apache2
             tag: "$CIRCLE_SHA1"
-      deploy:
-        steps:
-          - aws-white-list-circleci-ip/add:
-              description: nat
-              port: 22
-              mask: 32
-              tag-key: circleci
-              tag-value: bastionaccess
+        build:
+          steps:
+            - aws-white-list-circleci-ip/add:
+                description: nat
+                port: 22
+                mask: 32
+                tag-key: circleci
+                tag-value: bastionaccess
