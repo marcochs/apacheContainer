@@ -3,14 +3,14 @@ version: 2.1
 # Use a package of configuration called an orb.
 orbs:
   # build and push
-  aws-ecr: circleci/aws-ecr@6.7.0
+  aws-ecr: circleci/python:latest
   # open and close SSH in security group
   aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.1
 
 jobs:
   build_and_push:
     docker:
-      - image: cimg/base:2020.01
+      - image: circleci/python:latest
     steps:
       - aws-ecr/build-and-push-image:
           account-url: AWS_ECR_ACCOUNT_URL
