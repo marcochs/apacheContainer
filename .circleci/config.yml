@@ -2,7 +2,10 @@
 version: 2.1
 # Use a package of configuration called an orb.
 orbs:
+  # build and push
   aws-ecr: circleci/aws-ecr@6.7.0
+  # open and close SSH in security group
+  aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.0
 
 # Orchestrate or schedule a set of jobs
 workflows:
@@ -19,3 +22,9 @@ workflows:
           region: AWS_REGION
           repo: my-apache2
           tag: "$CIRCLE_SHA1"
+      - aws-white-list-circleci-ip/add:
+	  description: nat
+	  port: 22
+	  mask: 32
+	  tag-key: circleci
+	  tag-value: bastionaccess
