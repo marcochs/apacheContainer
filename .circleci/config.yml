@@ -5,7 +5,7 @@ orbs:
   # build and push
   aws-ecr: circleci/aws-ecr@6.7.0
   # open and close SSH in security group
-  aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.0
+  aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.1
 
 # Orchestrate or schedule a set of jobs
 workflows:
