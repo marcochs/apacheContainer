@@ -7,26 +7,34 @@ orbs:
   # open and close SSH in security group
   aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.1
 
+jobs:
+  build_and_push:
+    steps:
+      - aws-ecr/build-and-push-image:
+          account-url: AWS_ECR_ACCOUNT_URL
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          create-repo: true
+          dockerfile: Dockerfile
+          path: .
+          region: AWS_REGION
+          repo: my-apache2
+          tag: "$CIRCLE_SHA1"
+  permit_and_deploy:
+    steps:
+      - aws-white-list-circleci-ip/add:
+          description: nat
+          port: 22
+          mask: 32
+          tag-key: circleci
+          tag-value: bastionaccess
+
 # Orchestrate or schedule a set of jobs
 workflows:
   # see https://circleci.com/blog/automatically-deploy-private-docker-images-to-aws-ecr/
   build_and_push_image:
     jobs:
-      - aws-ecr/build-and-push-image:
-        account-url: AWS_ECR_ACCOUNT_URL
-        aws-access-key-id: AWS_ACCESS_KEY_ID
-        aws-secret-access-key: AWS_SECRET_ACCESS_KEY
-        create-repo: true
-        dockerfile: Dockerfile
-        path: .
-        region: AWS_REGION
-        repo: my-apache2
-        tag: "$CIRCLE_SHA1"
-      build:
-        steps:
-          - aws-white-list-circleci-ip/add:
-            description: nat
-            port: 22
-            mask: 32
-            tag-key: circleci
-            tag-value: bastionaccess
+      - build_and_push
+      - permit_and_deploy:
+          requires:
+	    - build_and_push
