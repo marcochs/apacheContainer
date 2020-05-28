@@ -23,8 +23,8 @@ workflows:
           repo: my-apache2
           tag: "$CIRCLE_SHA1"
       - aws-white-list-circleci-ip/add:
-	  description: nat
-	  port: 22
-	  mask: 32
-	  tag-key: circleci
-	  tag-value: bastionaccess
+          description: nat
+          port: 22
+          mask: 32
+          tag-key: circleci
+          tag-value: bastionaccess
