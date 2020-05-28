@@ -21,7 +21,8 @@ jobs:
           path: .
           region: AWS_REGION
           repo: my-apache2
-          tag: "$CIRCLE_SHA1"
+#          tag: "$CIRCLE_SHA1"
+          tag:latest
   permit_and_deploy:
     machine:
       image: ubuntu-1604:201903-01
@@ -36,7 +37,7 @@ jobs:
           name: Touch SSH test
           command: |
             echo 'Hello There'
-            ssh ec2-user@jump.cloudmindful.com 'touch circlewasHere$CIRCLE_SHA1; docker stop my-running-app; docker rm my-running-app; docker run -dit --restart=always --name my-running-app -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:$CIRCLE_SHA1'
+            ssh ec2-user@jump.cloudmindful.com 'docker stop my-running-app; docker rm my-running-app; docker run -dit --restart=always --name my-running-app -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:latest'
             echo 'Done with SSH test'
       - aws-white-list-circleci-ip/remove:
           description: accessfromcircle
