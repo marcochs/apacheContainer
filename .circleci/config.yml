@@ -27,7 +27,19 @@ jobs:
       image: ubuntu-1604:201903-01
     steps:
       - aws-white-list-circleci-ip/add:
-          description: nat
+          description: accessfromcircle
+          port: 22
+          mask: 32
+          tag-key: circleci
+          tag-value: bastionaccess
+      - run:
+          name: Touch SSH test
+          command: |
+            echo 'Hello There'
+            ssh ec2-user@jump.cloudmindful.com 'touch circleWasHere'
+            echo 'Done with SSH test'
+      - aws-white-list-circleci-ip/remove:
+          description: accessfromcircle
           port: 22
           mask: 32
           tag-key: circleci
