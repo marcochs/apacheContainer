@@ -35,16 +35,8 @@ jobs:
           tag-key: circleci
           tag-value: bastionaccess
       - run:
-          name: "What branch am I on now $CIRCLE_BRANCH?"
-          command: echo $CIRCLE_BRANCH
-      - run:
-          name: "What is ${CIRCLE_SHA1:0:7}?"
-          command: echo ${CIRCLE_SHA1:0:7}
-      - run:
           name: SSH deployment to EC2 Docker http://jump.cloudmindful.com:81/
-          command: |
-            ssh ec2-user@jump.cloudmindful.com touch ${CIRCLE_SHA1:0:7}
-            ssh ec2-user@jump.cloudmindful.com "docker stop my-running-app; docker rm my-running-app; docker run -dit --restart=always --name my-running-app -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:${CIRCLE_SHA1:0:7}"
+          command: ssh ec2-user@jump.cloudmindful.com "docker stop my-apache2-81; docker rm my-apache2-81; docker run -dit --restart=always --name my-apache2-81 -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:${CIRCLE_SHA1:0:7}"
       - aws-white-list-circleci-ip/remove:
           description: accessfromcircle
           port: 22
