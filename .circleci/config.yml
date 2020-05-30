@@ -34,6 +34,12 @@ jobs:
           tag-key: circleci
           tag-value: bastionaccess
       - run:
+          name: "What branch am I on now?"
+          command: echo $CIRCLE_BRANCH  
+      - run:
+          name: "What is CIRCLE_SHA1?"
+          command: echo $CIRCLE_SHA1  
+      - run:
           name: SSH deployment to EC2 Docker http://jump.cloudmindful.com:81/
           command: |
             echo CIRCLE_WORKFLOW_ID $CIRCLE_WORKFLOW_ID
