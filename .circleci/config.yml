@@ -36,8 +36,8 @@ jobs:
       - run:
           name: SSH deployment to EC2 Docker http://jump.cloudmindful.com:81/
           command: |
-            echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-            echo CIRCLE_SHA1=$CIRCLE_SHA1
+            echo CIRCLE_WORKFLOW_ID $CIRCLE_WORKFLOW_ID
+            echo CIRCLE_SHA1 $CIRCLE_SHA1
             echo "Hello There sha varable \$CIRCLE_SHA1=$CIRCLE_SHA1 or maybe CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID"
             ssh ec2-user@jump.cloudmindful.com 'docker stop my-running-app; docker rm my-running-app; docker image rm 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:latest; docker run -dit --restart=always --name my-running-app -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:latest'
             echo 'Done with SSH test'
