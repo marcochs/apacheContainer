@@ -22,8 +22,7 @@ jobs:
           region: AWS_REGION
           repo: my-apache2
           tag: ${CIRCLE_SHA1:0:7}
-#          tag: "$CIRCLE_SHA1"
-#          tag: latest
+          tag: latest
   permit_and_deploy:
     machine:
       image: ubuntu-1604:201903-01

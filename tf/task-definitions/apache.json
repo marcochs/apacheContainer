@@ -1,0 +1,13 @@
+[
+    {
+        "name": "apache2",
+        "image": "141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:green",
+        "essential": true,
+        "portMappings": [
+            {
+                "containerPort": 80,
+                "hostPort": 80
+            }
+        ]
+    }
+]
