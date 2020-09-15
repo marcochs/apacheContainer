@@ -1,4 +1,17 @@
 
+output "listener_rule_arn_dev" {
+  value = aws_lb_listener_rule.host_based_routing.id
+}
+
+output "service_blue" {
+  value = aws_ecs_service.acblue.id
+}
+
+output "service_green" {
+  value = aws_ecs_service.acgreen.id
+}
+
+
 variable "vpc-id" {
   type    = string
   default = "vpc-0329496e4c54c5617"
@@ -75,19 +88,41 @@ resource "aws_route53_record" "devlb" {
   records = ["${aws_lb.dev.dns_name}"]
 }
 
+resource "aws_route53_record" "devlb-blue" {
+  zone_id = "Z0798797FJ9OHRG3WUX2"
+  name    = "acdev-blue.vpc1.custa-sbox1.cloudmindful.com"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["${aws_lb.dev.dns_name}"]
+}
+
+resource "aws_route53_record" "devlb-green" {
+  zone_id = "Z0798797FJ9OHRG3WUX2"
+  name    = "acdev-green.vpc1.custa-sbox1.cloudmindful.com"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["${aws_lb.dev.dns_name}"]
+}
+
 resource "aws_lb_target_group" "blue" {
-  name        = "apachecontainer-blue-tg"
-  port        = 81
+  name        = "apachecontainer-blue-tg${substr(uuid(), 0, 3)}"
+  port        = 80
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = var.vpc-id
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = [name]
+  }
 }
 
-resource "aws_lb_target_group_attachment" "bluetestnat81" {
-  target_group_arn = aws_lb_target_group.blue.arn
-  target_id        = "10.94.32.230"
-  port             = 81
-}
+# move from docker on jump to fargate no longer needed
+#resource "aws_lb_target_group_attachment" "bluetestnat81" {
+#  target_group_arn = aws_lb_target_group.blue.arn
+#  target_id        = "10.94.32.230"
+#  port             = 81
+#}
 
 
 resource "aws_lb_listener" "dev443" {
@@ -135,6 +170,38 @@ resource "aws_lb_listener_rule" "host_based_routing" {
   }
 }
 
+resource "aws_lb_listener_rule" "host_based_routing_blue" {
+  listener_arn = aws_lb_listener.dev443.arn
+  priority     = 89
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.blue.arn
+  }
+
+  condition {
+    host_header {
+      values = [aws_route53_record.devlb-blue.name]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "host_based_routing_green" {
+  listener_arn = aws_lb_listener.dev443.arn
+  priority     = 88
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.green.arn
+  }
+
+  condition {
+    host_header {
+      values = [aws_route53_record.devlb-green.name]
+    }
+  }
+}
+
 
 resource "aws_lb_listener" "dev80" {
   load_balancer_arn = aws_lb.dev.arn
@@ -164,27 +231,18 @@ resource "aws_ecs_task_definition" "apacheContainer" {
   network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
-  #  execution_role_arn       = "arn:aws:iam::141517001380:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
   execution_role_arn = "arn:aws:iam::141517001380:role/ecsTaskExecutionRole"
 }
 
 
-resource "aws_ecs_service" "actest" {
-  name            = "actest"
-  cluster         = aws_ecs_cluster.actest.id
-  task_definition = aws_ecs_task_definition.apacheContainer.arn
-  desired_count   = 1
-  #  iam_role        = "arn:aws:iam::141517001380:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
-  #  #  depends_on      = ["aws_iam_role_policy.foo"]
+resource "aws_ecs_service" "acgreen" {
+  name                 = "acgreen"
+  cluster              = aws_ecs_cluster.actest.id
+  task_definition      = aws_ecs_task_definition.apacheContainer.arn
+  desired_count        = 1
   launch_type          = "FARGATE"
   force_new_deployment = true
   depends_on           = [aws_lb_target_group.green]
-
-  # not with FARGATE
-  #  ordered_placement_strategy {
-  #    type  = "binpack"
-  #    field = "cpu"
-  #  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.green.arn
@@ -198,11 +256,36 @@ resource "aws_ecs_service" "actest" {
     assign_public_ip = false
   }
 
-  #not with FARGATE
-  #  placement_constraints {
-  #    type       = "memberOf"
-  #    expression = "attribute:ecs.availability-zone in [us-east-1a, us-east-1b, us-east-1c]"
-  #  }
+  # maybe use these later... for now I want it spun up, not ignored that it's down
+  lifecycle {
+    ignore_changes = [desired_count, task_definition]
+  }
+
+  deployment_controller {
+    type = "ECS"
+  }
+}
+
+resource "aws_ecs_service" "acblue" {
+  name                 = "acblue"
+  cluster              = aws_ecs_cluster.actest.id
+  task_definition      = aws_ecs_task_definition.apacheContainer.arn
+  desired_count        = 1
+  launch_type          = "FARGATE"
+  force_new_deployment = true
+  depends_on           = [aws_lb_target_group.blue]
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.blue.arn
+    container_name   = "apache2"
+    container_port   = 80
+  }
+
+  network_configuration {
+    subnets          = ["${var.subnet-private-us-east-1a-id}", "${var.subnet-private-us-east-1b-id}", "${var.subnet-private-us-east-1c-id}"]
+    security_groups  = [var.sg-ecs-id]
+    assign_public_ip = false
+  }
 
   # maybe use these later... for now I want it spun up, not ignored that it's down
   lifecycle {
@@ -212,7 +295,6 @@ resource "aws_ecs_service" "actest" {
   deployment_controller {
     type = "ECS"
   }
-
 }
 
 resource "aws_lb_target_group" "green" {
@@ -227,11 +309,3 @@ resource "aws_lb_target_group" "green" {
     ignore_changes        = [name]
   }
 }
-
-# dont think I need this
-#resource "aws_lb_target_group_attachment" "greenecs" {
-#  target_group_arn = aws_lb_target_group.green.arn
-#  target_id        = "10.94.32.230"
-#  port             = 81
-#}
-

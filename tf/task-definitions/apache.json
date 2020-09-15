@@ -1,7 +1,7 @@
 [
     {
         "name": "apache2",
-        "image": "141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:green",
+        "image": "141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:latest",
         "essential": true,
         "portMappings": [
             {
