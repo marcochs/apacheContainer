@@ -136,6 +136,15 @@ rtdr = ecs.register_task_definition(
             'name': 'apache2',
             'image': image,
         },
+        'cpu': 256,
+        'memory': 512,
+        "portMappings": [
+            {
+                "containerPort": 80,
+                "hostPort": 80
+            }
+        ],
+        'essential': True,
     ],
     requiresCompatibilities=[
         'FARGATE',
