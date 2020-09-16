@@ -14,6 +14,8 @@ parser.add_argument('--svc_blue', help='ARN of blue service')
 parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information')
 args = parser.parse_args()
 
+
+
 # these could be tightened but should work
 blue = re.compile('.*blue*')
 green = re.compile('.*green*')
@@ -42,6 +44,9 @@ else:
         debug = 1
         uberdebug = 1
         print ('Uber verbose mode on.')
+
+if (uberdebug):
+    pp = pprint.PrettyPrinter(indent=4)
 
 if (args.tag):
     tag = args.tag
@@ -155,7 +160,7 @@ rtdr = ecs.register_task_definition(
 
 #print('task update response is: ', rtdr)
 if(uberdebug):
-    pp = pprint.PrettyPrinter(indent=4)
+    print('uberdebug: task update response is: ')
     pp.pprint(rtdr)
 
 new_td = rtdr['taskDefinition']['taskDefinitionArn']

@@ -181,7 +181,7 @@ resource "aws_lb_listener_rule" "host_based_routing_blue" {
 
   condition {
     host_header {
-      values = [aws_route53_record.devlb-blue.name]
+      values = [aws_route53_record.devlb-blue.name, "acdev-blue.cloudmindful.com"]
     }
   }
 }
@@ -197,7 +197,7 @@ resource "aws_lb_listener_rule" "host_based_routing_green" {
 
   condition {
     host_header {
-      values = [aws_route53_record.devlb-green.name]
+      values = [aws_route53_record.devlb-green.name, "acdev-green.cloudmindful.com"]
     }
   }
 }
@@ -240,6 +240,7 @@ resource "aws_ecs_service" "acgreen" {
   cluster              = aws_ecs_cluster.actest.id
   task_definition      = aws_ecs_task_definition.apacheContainer.arn
   desired_count        = 1
+  deployment_maximum_percent = 200
   launch_type          = "FARGATE"
   force_new_deployment = true
   depends_on           = [aws_lb_target_group.green]
@@ -271,6 +272,7 @@ resource "aws_ecs_service" "acblue" {
   cluster              = aws_ecs_cluster.actest.id
   task_definition      = aws_ecs_task_definition.apacheContainer.arn
   desired_count        = 1
+  deployment_maximum_percent = 200
   launch_type          = "FARGATE"
   force_new_deployment = true
   depends_on           = [aws_lb_target_group.blue]
