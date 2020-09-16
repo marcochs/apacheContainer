@@ -241,6 +241,7 @@ resource "aws_ecs_service" "acgreen" {
   task_definition      = aws_ecs_task_definition.apacheContainer.arn
   desired_count        = 1
   deployment_maximum_percent = 200
+  deployment_minimum_percent = 50
   launch_type          = "FARGATE"
   force_new_deployment = true
   depends_on           = [aws_lb_target_group.green]
@@ -265,6 +266,12 @@ resource "aws_ecs_service" "acgreen" {
   deployment_controller {
     type = "ECS"
   }
+
+  capacity_provider_strategy {
+  			     capacity_provider = "FARGATE"
+			     base = 1
+			     weight = 100
+  }
 }
 
 resource "aws_ecs_service" "acblue" {
@@ -273,6 +280,7 @@ resource "aws_ecs_service" "acblue" {
   task_definition      = aws_ecs_task_definition.apacheContainer.arn
   desired_count        = 1
   deployment_maximum_percent = 200
+  deployment_minimum_percent = 50
   launch_type          = "FARGATE"
   force_new_deployment = true
   depends_on           = [aws_lb_target_group.blue]
@@ -296,6 +304,12 @@ resource "aws_ecs_service" "acblue" {
 
   deployment_controller {
     type = "ECS"
+  }
+
+  capacity_provider_strategy {
+  			     capacity_provider = "FARGATE"
+			     base = 1
+			     weight = 100
   }
 }
 
