@@ -260,7 +260,7 @@ resource "aws_ecs_service" "acgreen" {
 
   # maybe use these later... for now I want it spun up, not ignored that it's down
   lifecycle {
-    ignore_changes = [desired_count, task_definition]
+    ignore_changes = [desired_count, task_definition, capacity_provider_strategy, launch_type]
   }
 
   deployment_controller {
@@ -293,7 +293,7 @@ resource "aws_ecs_service" "acblue" {
 
   # maybe use these later... for now I want it spun up, not ignored that it's down
   lifecycle {
-    ignore_changes = [desired_count, task_definition]
+    ignore_changes = [desired_count, task_definition, capacity_provider_strategy, launch_type]
   }
 
   deployment_controller {
