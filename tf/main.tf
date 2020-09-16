@@ -231,20 +231,20 @@ resource "aws_ecs_task_definition" "apacheContainer" {
   network_mode             = "awsvpc"
   cpu                      = 256
   memory                   = 512
-  execution_role_arn = "arn:aws:iam::141517001380:role/ecsTaskExecutionRole"
+  execution_role_arn       = "arn:aws:iam::141517001380:role/ecsTaskExecutionRole"
 }
 
 
 resource "aws_ecs_service" "acgreen" {
-  name                 = "acgreen"
-  cluster              = aws_ecs_cluster.actest.id
-  task_definition      = aws_ecs_task_definition.apacheContainer.arn
-  desired_count        = 1
+  name                       = "acgreen"
+  cluster                    = aws_ecs_cluster.actest.id
+  task_definition            = aws_ecs_task_definition.apacheContainer.arn
+  desired_count              = 1
   deployment_maximum_percent = 200
-  deployment_minimum_percent = 50
-  launch_type          = "FARGATE"
-  force_new_deployment = true
-  depends_on           = [aws_lb_target_group.green]
+  deployment_minimum_healthy_percent = 50
+  launch_type                = "FARGATE"
+  force_new_deployment       = true
+  depends_on                 = [aws_lb_target_group.green]
 
   load_balancer {
     target_group_arn = aws_lb_target_group.green.arn
@@ -268,22 +268,22 @@ resource "aws_ecs_service" "acgreen" {
   }
 
   capacity_provider_strategy {
-  			     capacity_provider = "FARGATE"
-			     base = 1
-			     weight = 100
+    capacity_provider = "FARGATE"
+    base              = 1
+    weight            = 100
   }
 }
 
 resource "aws_ecs_service" "acblue" {
-  name                 = "acblue"
-  cluster              = aws_ecs_cluster.actest.id
-  task_definition      = aws_ecs_task_definition.apacheContainer.arn
-  desired_count        = 1
+  name                       = "acblue"
+  cluster                    = aws_ecs_cluster.actest.id
+  task_definition            = aws_ecs_task_definition.apacheContainer.arn
+  desired_count              = 1
   deployment_maximum_percent = 200
-  deployment_minimum_percent = 50
-  launch_type          = "FARGATE"
-  force_new_deployment = true
-  depends_on           = [aws_lb_target_group.blue]
+  deployment_minimum_healthy_percent = 50
+  launch_type                = "FARGATE"
+  force_new_deployment       = true
+  depends_on                 = [aws_lb_target_group.blue]
 
   load_balancer {
     target_group_arn = aws_lb_target_group.blue.arn
@@ -307,9 +307,9 @@ resource "aws_ecs_service" "acblue" {
   }
 
   capacity_provider_strategy {
-  			     capacity_provider = "FARGATE"
-			     base = 1
-			     weight = 100
+    capacity_provider = "FARGATE"
+    base              = 1
+    weight            = 100
   }
 }
 
