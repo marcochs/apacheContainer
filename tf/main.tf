@@ -266,12 +266,6 @@ resource "aws_ecs_service" "acgreen" {
   deployment_controller {
     type = "ECS"
   }
-
-  capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    base              = 1
-    weight            = 100
-  }
 }
 
 resource "aws_ecs_service" "acblue" {
@@ -304,12 +298,6 @@ resource "aws_ecs_service" "acblue" {
 
   deployment_controller {
     type = "ECS"
-  }
-
-  capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    base              = 1
-    weight            = 100
   }
 }
 

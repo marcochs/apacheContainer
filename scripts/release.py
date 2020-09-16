@@ -197,7 +197,7 @@ usr = ecs.update_service(
     },
     platformVersion='LATEST',
     forceNewDeployment=True,
-    healthCheckGracePeriodSeconds=5
+    healthCheckGracePeriodSeconds=0,
 )
 
 if(uberdebug):
