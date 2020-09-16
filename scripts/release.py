@@ -176,8 +176,8 @@ usr = ecs.update_service(
         },
     ],
     deploymentConfiguration={
-        'maximumPercent': 100,
-        'minimumHealthyPercent': 0
+        'maximumPercent': 200,
+        'minimumHealthyPercent': 50
     },
     networkConfiguration={
         'awsvpcConfiguration': {
