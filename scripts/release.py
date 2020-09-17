@@ -11,7 +11,9 @@ parser.add_argument('--tag', help='container tag from git hash')
 parser.add_argument('--rule', help='ARN of ALB rule that has the TG weights')
 parser.add_argument('--svc_green', help='ARN of green service')
 parser.add_argument('--svc_blue', help='ARN of blue service')
-parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information')
+parser.add_argument('--tg_green', help='ARN of green target group')
+parser.add_argument('--tg_blue', help='ARN of blue target group')
+parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information, -vv and -vvv also supported')
 args = parser.parse_args()
 
 
@@ -27,23 +29,29 @@ exec_role = 'arn:aws:iam::141517001380:role/ecsTaskExecutionRole'
 ecr_prefix = '141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:'
 
 # which service to update
-service = None
+new_service = None
+old_service = None
 
 # key blue/green service ARN in here, svc_name could be parameterized
-ctx = {'blue':  {'svc_arn': '', 'svc_name': 'acblue'},
-       'green': {'svc_arn': '', 'svc_name': 'acgreen'}}
+ctx = {'blue':  {'svc_arn': '', 'svc_name': 'acblue',  'tg_arn': '', 'new_wt': 0},
+       'green': {'svc_arn': '', 'svc_name': 'acgreen', 'tg_arn': '', 'new_wt': 0}}
 
 # process_args funct or subroutine perhaps with context 
 debug = 0
 uberdebug = 0
-if (args.log_level == 1 ):
+superuberdebug = 0
+if args.log_level == 1:
     debug = 1
     print('Verbose mode on.')
-else:
-    if (args.log_level > 1):
+elif args.log_level == 2:
         debug = 1
         uberdebug = 1
         print ('Uber verbose mode on.')
+elif args.log_level >= 3:
+        debug = 1
+        uberdebug = 1
+        superuberdebug = 1
+        print ('SuperUber verbose mode on.')
 
 if (uberdebug):
     pp = pprint.PrettyPrinter(indent=4)
@@ -76,11 +84,25 @@ else:
     sys.exit('Exiting, no --svc_green for ARN of green ECS service supplied')
     
 if(args.svc_blue):
-    ctx['blue']['svc_arn'] = args.svc_green
+    ctx['blue']['svc_arn'] = args.svc_blue
     if (debug):
         print("Got --svc_blue  = ctx['blue']['svc_arn'] = ", ctx['blue']['svc_arn'])
 else:
     sys.exit('Exiting, no --svc_blue for ARN of blue ECS service supplied')
+    
+if(args.tg_blue):
+    ctx['blue']['tg_arn'] = args.tg_blue
+    if (debug):
+        print("Got --tg_blue  = ctx['blue']['tg_arn'] = ", ctx['blue']['tg_arn'])
+else:
+    sys.exit('Exiting, no --tg_blue for ARN of blue ECS service target group')
+    
+if(args.tg_green):
+    ctx['green']['tg_arn'] = args.tg_green
+    if (debug):
+        print("Got --tg_green  = ctx['green']['tg_arn'] = ", ctx['green']['tg_arn'])
+else:
+    sys.exit('Exiting, no --tg_green for ARN of green ECS service target group')
     
 lb = boto3.client('elbv2')
 ecs = boto3.client('ecs')
@@ -106,9 +128,11 @@ for tg in rules['Rules'][0]['Actions'][0]['ForwardConfig']['TargetGroups']:
     print('{:3d}'.format(tg['Weight']), " % --> ",  tg['TargetGroupArn'])
     if(tg['Weight'] == 0):
         if(blue.match(tg['TargetGroupArn'])):
-            service = 'blue'
+            new_service = 'blue'
+            old_service = 'green'
         if(green.match(tg['TargetGroupArn'])):
-            service = 'green'
+            new_service = 'green'
+            old_service = 'blue'
     
 # if service is None still exit with no clear service to release to
 if(service == None):
@@ -159,7 +183,7 @@ rtdr = ecs.register_task_definition(
 )
 
 #print('task update response is: ', rtdr)
-if(uberdebug):
+if(superuberdebug):
     print('uberdebug: task update response is: ')
     pp.pprint(rtdr)
 
@@ -200,10 +224,44 @@ usr = ecs.update_service(
     healthCheckGracePeriodSeconds=0,
 )
 
-if(uberdebug):
+if(superuberdebug):
     pp.pprint(usr)
 
 ## Test new svc
 
 ## exit or canary/slow cutover of weighted rule
 
+## first just do a 100% cutover
+if (new_service == 'blue'):
+    ctx['blue']['new_wt'] = 100
+    ctx['green']['new_wt'] = 0
+else:
+    ctx['blue']['new_wt'] = 0
+    ctx['green']['new_wt'] = 100
+
+mrr = client.modify_rule(
+    RuleArn=rule,
+    Actions=[
+        {
+            'Type': 'forward',
+            'ForwardConfig': {
+                'TargetGroups': [
+                    {
+                        'TargetGroupArn': ctx['blue']['tg_arn'],
+                        'Weight': ctx['blue']['new_wt']
+                    },
+                    {
+                        'TargetGroupArn': ctx['green']['tg_arn'],
+                        'Weight': ctx['green']['new_wt']
+                    },
+                ],
+                'TargetGroupStickinessConfig': {
+                    'Enabled': True,
+                    'DurationSeconds': 60
+                }
+            }
+        }
+    ]
+)
+if(uberdebug):
+    pp.pprint(mrr)

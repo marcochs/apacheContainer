@@ -10,6 +10,12 @@ output "service_blue" {
 output "service_green" {
   value = aws_ecs_service.acgreen.id
 }
+output "tg_green" {
+  value = aws_lb_target_group.blue.id
+}
+output "tg_blue" {
+  value = aws_lb_target_group.green.id
+}
 
 
 variable "vpc-id" {
@@ -157,7 +163,7 @@ resource "aws_lb_listener_rule" "host_based_routing" {
 
       stickiness {
         enabled  = true
-        duration = 600
+        duration = 60
       }
 
     }
