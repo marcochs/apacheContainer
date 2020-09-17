@@ -135,10 +135,10 @@ for tg in rules['Rules'][0]['Actions'][0]['ForwardConfig']['TargetGroups']:
             old_service = 'blue'
     
 # if service is None still exit with no clear service to release to
-if(service == None):
+if(new_service == None):
     sys.exit('Exiting, no clear zero weight service to release to, proceed manually maybe move this after task def update')
 
-print('Will deploy build to the zero weight service which is: ', service, 'ARN: ', ctx[service]['svc_arn'])
+print('Will deploy build to the zero weight service which is: ', new_service, 'ARN: ', ctx[new_service]['svc_arn'])
 
 # prob need the blue and green service ARN's in variable / dict from TF > env > command line parameter    
 #################sys.exit('Exiting, early testing')
@@ -191,10 +191,10 @@ new_td = rtdr['taskDefinition']['taskDefinitionArn']
 if (debug):
     print('new_td = ', new_td)
 
-## Update the 0 weight service
+## Update the 0 weight service to the new task definition
 usr = ecs.update_service(
     cluster=cluster,
-    service=ctx[service]['svc_arn'],
+    service=ctx[new_service]['svc_arn'],
     desiredCount=1,
     taskDefinition=new_td,
     capacityProviderStrategy=[
@@ -239,7 +239,11 @@ else:
     ctx['blue']['new_wt'] = 0
     ctx['green']['new_wt'] = 100
 
-mrr = client.modify_rule(
+if (debug):
+    print ('Moving blue tg -> ', ctx['blue']['new_wt'], 'and moving green tg -> ', ctx['green']['new_wt'])
+
+
+mrr = lb.modify_rule(
     RuleArn=rule,
     Actions=[
         {
@@ -264,4 +268,5 @@ mrr = client.modify_rule(
     ]
 )
 if(uberdebug):
+    print('Modify_rule response: ')
     pp.pprint(mrr)
