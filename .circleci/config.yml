@@ -29,8 +29,11 @@ jobs:
           name: setup environment for release.py
           command: . ./scripts/env.bash
       - run:
-          name: run release.py for the blue-green deployment
-          command: . ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN
+          name: which python3
+	  command: which pyton3
+#      - run:
+#          name: run release.py for the blue-green deployment
+#          command: . ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN
 
 # Orchestrate or schedule a set of jobs
 workflows:
