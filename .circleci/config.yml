@@ -29,9 +29,9 @@ jobs:
       - run:
           name: setup environment for release.py
           command: . ./scripts/env.bash
-#      - run:
-#          name: pip show boto3
-#          command: pip show boto3
+      - run:
+          name: sudo pip install boto3
+          command: sudo pip install boto3
       - run:
           name: run release.py for the blue-green deployment may need /opt/circleci/.pyenv/shims/python3
           command: ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN
