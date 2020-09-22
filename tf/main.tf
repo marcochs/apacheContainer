@@ -117,6 +117,11 @@ resource "aws_lb_target_group" "blue" {
   target_type = "ip"
   vpc_id      = var.vpc-id
 
+  # this finally makes me smile defautl was 300... five long minutes...
+  # we don't need a delay because the service is not in rotation.
+  # try with 0 first and see if that can be stable...
+  deregistration_delay = 0
+
   lifecycle {
     create_before_destroy = true
     ignore_changes        = [name]
@@ -343,6 +348,7 @@ resource "aws_lb_target_group" "green" {
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = var.vpc-id
+  deregistration_delay = 0
 
   lifecycle {
     create_before_destroy = true
