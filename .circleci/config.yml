@@ -28,7 +28,7 @@ jobs:
       - checkout
       - run:
           name: setup environment for release.py
-          command: . ./scripts/env.bash
+          command: source ./scripts/env.bash
       - run:
           name: Show variables
           command: |
