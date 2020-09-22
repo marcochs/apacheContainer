@@ -4,8 +4,6 @@ version: 2.1
 orbs:
   # build and push
   aws-ecr: circleci/aws-ecr@6.7.0
-  # open and close SSH in security group
-  aws-white-list-circleci-ip: configure/aws-white-list-circleci-ip@1.0.1
 
 jobs:
   build_and_push:
@@ -21,8 +19,7 @@ jobs:
           path: .
           region: AWS_REGION
           repo: my-apache2
-          tag: ${CIRCLE_SHA1:0:7}
-          tag: latest
+          tag: latest,${CIRCLE_SHA1:0:7}
   release:
     machine:
       image: ubuntu-1604:201903-01
