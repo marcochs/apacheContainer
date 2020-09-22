@@ -30,6 +30,10 @@ jobs:
           name: setup environment for release.py
           command: . ./scripts/env.bash
       - run:
+          name: Show variables
+          command: |
+            echo RULE is $RULE
+      - run:
           name: sudo pip3 install boto3
           command: sudo pip3 install boto3
       - run:
