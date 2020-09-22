@@ -297,4 +297,4 @@ if(superuberdebug):
     print('Modify_rule response: ')
     pp.pprint(mrr)
 
-print('All done, may take some time for ECS to drain/update the ', new_service, ' tasks.')
+print('All done, enjoy!')
