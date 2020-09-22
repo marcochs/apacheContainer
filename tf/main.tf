@@ -123,12 +123,25 @@ resource "aws_lb_target_group" "blue" {
   }
 }
 
+resource "aws_lb_target_group" "blog" {
+  name        = "apachecontainer-blog"
+  port        = 80
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc-id
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = [name]
+  }
+}
+
 # move from docker on jump to fargate no longer needed
-#resource "aws_lb_target_group_attachment" "bluetestnat81" {
-#  target_group_arn = aws_lb_target_group.blue.arn
-#  target_id        = "10.94.32.230"
-#  port             = 81
-#}
+resource "aws_lb_target_group_attachment" "blog" {
+  target_group_arn = aws_lb_target_group.blog.arn
+  target_id        = "10.94.32.230"
+  port             = 80
+}
 
 
 resource "aws_lb_listener" "dev443" {
@@ -136,7 +149,8 @@ resource "aws_lb_listener" "dev443" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/e31e3b4a-fdfa-4be1-a9f8-bd32470b0077"
+#  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/e31e3b4a-fdfa-4be1-a9f8-bd32470b0077"
+  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/95c6d210-cee6-4370-bc08-c41e0e670736"
 
   default_action {
     type             = "forward"
@@ -188,6 +202,22 @@ resource "aws_lb_listener_rule" "host_based_routing_blue" {
   condition {
     host_header {
       values = [aws_route53_record.devlb-blue.name, "acdev-blue.cloudmindful.com"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "host_based_routing_blog" {
+  listener_arn = aws_lb_listener.dev443.arn
+  priority     = 87
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.blog.arn
+  }
+
+  condition {
+    host_header {
+      values = ["cloudmindful.com"]
     }
   }
 }
