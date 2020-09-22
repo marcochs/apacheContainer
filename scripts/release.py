@@ -5,6 +5,8 @@ import sys
 import re
 import pprint
 import argparse
+import time
+
 
 parser = argparse.ArgumentParser(description='Perform blue-green deployment.')
 parser.add_argument('--tag', help='container tag from git hash')
@@ -227,7 +229,31 @@ usr = ecs.update_service(
 if(superuberdebug):
     pp.pprint(usr)
 
+## wait for ready to test (no more draining... all primary...)
+while True:
+    response = ecs.describe_services(
+        cluster=cluster,
+        services=[
+            ctx[new_service]['svc_arn'],
+        ],
+    )
+
+    if (draining.match(str(response['services'][0]['deployments']))):
+        if (superuberdebug):
+            pp.pprint(response['services'][0]['deployments'])
+        if (debug):
+            print('Still draining... will sleep 5...')
+        time.sleep(5)
+    else:
+        if (superuberdebug):
+            pp.pprint(response['services'][0]['deployments'])
+        if (debug):
+            print('No more draining... continue to test & cutover...')
+        break
+
+    
 ## Test new svc
+print('Please add a good urlparse test and/or a 200 test')
 
 ## exit or canary/slow cutover of weighted rule
 
@@ -241,7 +267,6 @@ else:
 
 if (debug):
     print ('Moving blue tg -> ', ctx['blue']['new_wt'], 'and moving green tg -> ', ctx['green']['new_wt'])
-
 
 mrr = lb.modify_rule(
     RuleArn=rule,
