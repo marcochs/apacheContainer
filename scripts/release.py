@@ -230,6 +230,7 @@ if(superuberdebug):
     pp.pprint(usr)
 
 ## wait for ready to test (no more draining... all primary...)
+draining = re.compile('.*ACTIVE*')
 while True:
     response = ecs.describe_services(
         cluster=cluster,

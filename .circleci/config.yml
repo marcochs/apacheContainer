@@ -23,25 +23,16 @@ jobs:
           repo: my-apache2
           tag: ${CIRCLE_SHA1:0:7}
           tag: latest
-  permit_and_deploy:
+  release:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - aws-white-list-circleci-ip/add:
-          description: accessfromcircle
-          port: 22
-          mask: 32
-          tag-key: circleci
-          tag-value: bastionaccess
       - run:
-          name: SSH deployment to EC2 Docker http://jump.cloudmindful.com:81/
-          command: ssh ec2-user@jump.cloudmindful.com "docker stop my-apache2-81; docker rm my-apache2-81; docker run -dit --restart=always --name my-apache2-81 -p 81:80 141517001380.dkr.ecr.us-east-1.amazonaws.com/my-apache2:${CIRCLE_SHA1:0:7}"
-      - aws-white-list-circleci-ip/remove:
-          description: accessfromcircle
-          port: 22
-          mask: 32
-          tag-key: circleci
-          tag-value: bastionaccess
+          name: setup environment for release.py
+          command: . ./scripts/env.bash
+      - run:
+          name: run release.py for the blue-green deployment
+          command: . ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN
 
 # Orchestrate or schedule a set of jobs
 workflows:
@@ -49,6 +40,6 @@ workflows:
   build_and_push_image:
     jobs:
       - build_and_push
-      - permit_and_deploy:
+      - release:
           requires:
             - build_and_push
