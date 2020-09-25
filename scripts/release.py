@@ -275,13 +275,14 @@ with urllib.request.urlopen(ctx[new_service]['test_url']) as resource:
 htmlstring = html.decode("utf-8")
 if(regex.search(htmlstring)):
     print('Simple test, matched grep string: ', test_grep, ' in url: ', ctx[new_service]['test_url'], ' continuing to cutover')
-    sys.exit(0)
 else:
     print('Failed simple test: No match grep string: ', test_grep, ' in url: ', ctx[new_service]['test_url'], ' will exit 1 now')
     sys.exit(1)        
 
 
-## exit or canary/slow cutover of weighted rule
+## exit or canary +extra canary_delay /slow cutover of weighted rule
+
+## depoy_only = true exit here
 
 ## first just do a 100% cutover
 if (new_service == 'blue'):
