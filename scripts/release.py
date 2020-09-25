@@ -126,7 +126,7 @@ else:
     sys.exit('Exiting, no --url_green for testing deployments to the green service')
     
 if(args.url_grep):
-    test_grep = args.url_green
+    test_grep = args.url_grep
     if (debug):
         print("Got --url_grep  = test_grep = ", test_grep)
 else:
