@@ -17,6 +17,12 @@ output "tg_blue" {
   value = aws_lb_target_group.blue.id
 }
 
+output "fqdn_green" {
+       value = var.fqdn_green
+       }
+output "fqdn_blue" {
+       value = var.fqdn_blue
+       }
 
 variable "vpc-id" {
   type    = string
@@ -58,13 +64,18 @@ variable "subnet-private-us-east-1c-id" {
   type    = string
   default = "subnet-033a6e87720fdf16d"
 }
-
-
-
 variable "elb-logs-bucket" {
   type    = string
   default = "logs-apachecontainer"
 }
+variable "fqdn_blue" {
+	 type = string
+	 default = "acdev-blue.cloudmindful.com"
+	 }
+variable "fqdn_green" {
+	 type = string
+	 default = "acdev-green.cloudmindful.com"
+	 }
 
 resource "aws_lb" "dev" {
   name               = "apachecontainer-dev"
@@ -206,7 +217,7 @@ resource "aws_lb_listener_rule" "host_based_routing_blue" {
 
   condition {
     host_header {
-      values = [aws_route53_record.devlb-blue.name, "acdev-blue.cloudmindful.com"]
+      values = [aws_route53_record.devlb-blue.name, var.fqdn_blue]
     }
   }
 }
@@ -238,7 +249,7 @@ resource "aws_lb_listener_rule" "host_based_routing_green" {
 
   condition {
     host_header {
-      values = [aws_route53_record.devlb-green.name, "acdev-green.cloudmindful.com"]
+      values = [aws_route53_record.devlb-green.name, var.fqdn_green]
     }
   }
 }

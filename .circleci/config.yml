@@ -26,20 +26,12 @@ jobs:
       image: ubuntu-2004:202008-01
     steps:
       - checkout
-#      - run:
-#          name: setup environment for release.py
-#          command: source ./scripts/env.bash
-# need BASH_ENV? just do workaround &&
-#      - run:
-#          name: Show variables
-#          command: |
-#            echo RULE is $RULE
       - run:
           name: sudo pip3 install boto3
           command: sudo pip3 install boto3
       - run:
           name: run release.py for the blue-green deployment may need /opt/circleci/.pyenv/shims/python3
-          command: source ./scripts/env.bash && ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN
+          command: source ./scripts/env.bash && ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN --url_blue $URL_BLUE --url_green $URL_GREEN --url_grep $URL_GREP
 
 # Orchestrate or schedule a set of jobs
 workflows:

@@ -6,7 +6,7 @@ import re
 import pprint
 import argparse
 import time
-
+import urllib.request
 
 parser = argparse.ArgumentParser(description='Perform blue-green deployment.')
 parser.add_argument('--tag', help='container tag from git hash')
@@ -15,6 +15,10 @@ parser.add_argument('--svc_green', help='ARN of green service')
 parser.add_argument('--svc_blue', help='ARN of blue service')
 parser.add_argument('--tg_green', help='ARN of green target group')
 parser.add_argument('--tg_blue', help='ARN of blue target group')
+parser.add_argument('--url_blue', help='URL for blue testing')
+parser.add_argument('--url_green', help='URL for green testing')
+parser.add_argument('--url_grep', help='string to grep in testing release test URL')
+
 parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information, -vv and -vvv also supported')
 args = parser.parse_args()
 
@@ -35,8 +39,8 @@ new_service = None
 old_service = None
 
 # key blue/green service ARN in here, svc_name could be parameterized
-ctx = {'blue':  {'svc_arn': '', 'svc_name': 'acblue',  'tg_arn': '', 'new_wt': 0},
-       'green': {'svc_arn': '', 'svc_name': 'acgreen', 'tg_arn': '', 'new_wt': 0}}
+ctx = {'blue':  {'svc_arn': '', 'svc_name': 'acblue',  'tg_arn': '', 'new_wt': 0, 'test_url': ''},
+       'green': {'svc_arn': '', 'svc_name': 'acgreen', 'tg_arn': '', 'new_wt': 0, 'test_url': ''}}
 
 # process_args funct or subroutine perhaps with context 
 debug = 0
@@ -106,6 +110,30 @@ if(args.tg_green):
 else:
     sys.exit('Exiting, no --tg_green for ARN of green ECS service target group')
     
+
+if(args.url_blue):
+    ctx['blue']['test_url'] = args.url_blue
+    if (debug):
+        print("Got --url_blue  = ctx['blue']['test_url'] = ", ctx['blue']['test_url'])
+else:
+    sys.exit('Exiting, no --url_blue for testing deployments to the blue service')
+    
+if(args.url_green):
+    ctx['green']['test_url'] = args.url_green
+    if (debug):
+        print("Got --url_green  = ctx['green']['test_url'] = ", ctx['green']['test_url'])
+else:
+    sys.exit('Exiting, no --url_green for testing deployments to the green service')
+    
+if(args.url_grep):
+    test_grep = args.url_green
+    if (debug):
+        print("Got --url_grep  = test_grep = ", test_grep)
+else:
+    sys.exit('Exiting, no --url_grep for testing deployment prior to cutover')
+    
+
+# See which service we will deploy to, the zero weight one
 lb = boto3.client('elbv2')
 ecs = boto3.client('ecs')
 
@@ -142,22 +170,8 @@ if(new_service == None):
 
 print('Will deploy build to the zero weight service which is: ', new_service, 'ARN: ', ctx[new_service]['svc_arn'])
 
-# prob need the blue and green service ARN's in variable / dict from TF > env > command line parameter    
-#################sys.exit('Exiting, early testing')
 
-
-    
-# unnecessary?
-#tds = ecs.list_task_definitions(
-#    familyPrefix=family,
-#    maxResults=35,
-#)
-#print(tds)
-#td_arn= tds['taskDefinitionArns'][0]
-#print('TD ARN is: ', td_arn)
-# end unecessary?
-
-# needs to be in a sub or func... memory/cpu could be parameterized
+# update the task definition to the new image tag
 rtdr = ecs.register_task_definition(
     family=family,
     executionRoleArn=exec_role,
@@ -229,7 +243,7 @@ usr = ecs.update_service(
 if(superuberdebug):
     pp.pprint(usr)
 
-## wait for ready to test (no more draining... all primary...)
+## wait for ready to test: no more draining/ACTIVE... all tasks are PRIMARY
 draining = re.compile('.*ACTIVE*')
 while True:
     response = ecs.describe_services(
@@ -252,9 +266,20 @@ while True:
             print('No more draining... continue to test & cutover...')
         break
 
-    
 ## Test new svc
-print('Please add a good urlparse test and/or a 200 test')
+regex = re.compile(test_grep)
+
+with urllib.request.urlopen(ctx[new_service]['test_url']) as resource:
+    html = resource.read()
+
+htmlstring = html.decode("utf-8")
+if(regex.search(htmlstring)):
+    print('Simple test, matched grep string: ', test_grep, ' in url: ', ctx[new_service]['test_url'], ' continuing to cutover')
+    sys.exit(0)
+else:
+    print('Failed simple test: No match grep string: ', test_grep, ' in url: ', ctx[new_service]['test_url'], ' will exit 1 now')
+    sys.exit(1)        
+
 
 ## exit or canary/slow cutover of weighted rule
 
