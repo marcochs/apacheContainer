@@ -20,10 +20,10 @@ parser.add_argument('--url_blue', help='URL for blue testing')
 parser.add_argument('--url_green', help='URL for green testing')
 parser.add_argument('--url_grep', help='string to grep in testing release test URL')
 parser.add_argument('--deploy_only', help='if "TRUE" exit after new task is running without live traffic shift.')
-parser.add_argument('--canary_delay', help='Extra number of seconds to delay after first step of live traffic shift, default 0')
-parser.add_argument('--step_delay', help='Base number of seconds to delay after each step-up of live traffic shift, default 45')
-parser.add_argument('--testing_delay', help='Seconds to delay for testing before first step of live traffic shift, default 0')
-parser.add_argument('--release_num_steps', help='Number of steps to go to 100% live traffic on new release. 1 or more, default to 3.')
+parser.add_argument('--canary_delay', type=int, help='Extra number of seconds to delay after first step of live traffic shift, default 0')
+parser.add_argument('--step_delay', type=int, help='Base number of seconds to delay after each step-up of live traffic shift, default 45')
+parser.add_argument('--testing_delay', type=int, help='Seconds to delay for testing before first step of live traffic shift, default 0')
+parser.add_argument('--release_num_steps', type=int, help='Number of steps to go to 100% live traffic on new release. 1 or more, default to 3.')
 
 parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information, -vv and -vvv also supported')
 args = parser.parse_args()
@@ -166,7 +166,8 @@ else:
         if (debug):
             print('Set step_delay ', step_delay)
 
-if(args.testing_delay):
+# may need existence check here for bulletproof, or default set in argparse            
+if(args.testing_delay >= 0):
     # some type checking would be nice here
     testing_delay = args.testing_delay
     if (debug):
