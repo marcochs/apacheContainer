@@ -355,6 +355,14 @@ pct_change = math.floor(100/release_num_steps)
 if (debug):
     print ('Setup pct_change = ', pct_change)
 
+# setup beginning state... maybe should change new_wt to weight for clarity    
+if (new_service == 'blue'):
+    ctx['blue']['new_wt'] = 0
+    ctx['green']['new_wt'] = 100
+else:
+    ctx['blue']['new_wt'] = 100
+    ctx['green']['new_wt'] = 0
+
 for x in range(1, release_num_steps + 1):
 
     if (x == release_num_steps):
