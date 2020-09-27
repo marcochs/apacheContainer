@@ -31,7 +31,7 @@ jobs:
           command: sudo pip3 install boto3
       - run:
           name: run release.py for the blue-green deployment may need /opt/circleci/.pyenv/shims/python3
-          command: source ./scripts/env.bash && ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN --url_blue $URL_BLUE --url_green $URL_GREEN --url_grep $URL_GREP
+          command: source ./scripts/env.bash && ./scripts/release.py -vv  --tag ${CIRCLE_SHA1:0:7} --rule $RULE --svc_green $SVC_GREEN --svc_blue $SVC_BLUE --tg_blue $TG_BLUE --tg_green $TG_GREEN --url_blue $URL_BLUE --url_green $URL_GREEN --url_grep $URL_GREP --deploy_only $DEPLOY_ONLY --canary_delay $CANARY_DELAY --testing_delay $TESTING_DELAY --release_num_steps $RELEASE_NUM_STEPS --step_delay $STEP_DELAY
 
 # Orchestrate or schedule a set of jobs
 workflows:

@@ -7,6 +7,7 @@ import pprint
 import argparse
 import time
 import urllib.request
+import math
 
 parser = argparse.ArgumentParser(description='Perform blue-green deployment.')
 parser.add_argument('--tag', help='container tag from git hash')
@@ -18,6 +19,11 @@ parser.add_argument('--tg_blue', help='ARN of blue target group')
 parser.add_argument('--url_blue', help='URL for blue testing')
 parser.add_argument('--url_green', help='URL for green testing')
 parser.add_argument('--url_grep', help='string to grep in testing release test URL')
+parser.add_argument('--deploy_only', help='if "TRUE" exit after new task is running without live traffic shift.')
+parser.add_argument('--canary_delay', help='Extra number of seconds to delay after first step of live traffic shift, default 0')
+parser.add_argument('--step_delay', help='Base number of seconds to delay after each step-up of live traffic shift, default 45')
+parser.add_argument('--testing_delay', help='Seconds to delay for testing before first step of live traffic shift, default 0')
+parser.add_argument('--release_num_steps', help='Number of steps to go to 100% live traffic on new release. 1 or more, default to 3.')
 
 parser.add_argument('-v','--verbose', action='count', dest='log_level', default=0, help='print extra debug information, -vv and -vvv also supported')
 args = parser.parse_args()
@@ -131,7 +137,56 @@ if(args.url_grep):
         print("Got --url_grep  = test_grep = ", test_grep)
 else:
     sys.exit('Exiting, no --url_grep for testing deployment prior to cutover')
-    
+
+if(args.deploy_only):
+    if (args.deploy_only == 'TRUE'):
+        deploy_only = True
+    else:
+        deploy_only = False
+if (debug):
+    print('Set deploy_only flag: ', deploy_only)
+
+if(args.canary_delay):
+    # some type checking would be nice here
+    canary_delay = args.canary_delay
+    if (debug):
+        print("Got --canary_delay ", canary_delay)
+else:
+        canary_delay = 0
+        if (debug):
+            print('Set canary_delay ', canary_delay)
+
+if(args.step_delay):
+    # some type checking would be nice here
+    step_delay = args.step_delay
+    if (debug):
+        print("Got --step_delay ", step_delay)
+else:
+        step_delay = 45
+        if (debug):
+            print('Set step_delay ', step_delay)
+
+if(args.testing_delay):
+    # some type checking would be nice here
+    testing_delay = args.testing_delay
+    if (debug):
+        print("Got --testing_delay ", testing_delay)
+else:
+        testing_delay = 0
+if (debug):
+    print('Set testing_delay ', testing_delay)
+
+if(args.release_num_steps):
+    release_num_steps = args.release_num_steps
+    if (debug):
+        print("Got --release_num_steps ", release_num_steps)
+else:
+    release_num_steps = 3
+    if (debug):
+        print('No release_num_steps, defaulting to 3')
+
+
+## END parse args> needs func/sub
 
 # See which service we will deploy to, the zero weight one
 lb = boto3.client('elbv2')
@@ -280,47 +335,84 @@ else:
     sys.exit(1)        
 
 
+# no this is in the lool... maybe new testing_delay before canary option to abort in CircleCI console
 ## exit or canary +extra canary_delay /slow cutover of weighted rule
-
+if (testing_delay > 0):
+    if (debug):
+        print('Sleeping for testing_delay = ', testing_delay, ' seconds')
+    time.sleep(testing_delay)
+    
 ## depoy_only = true exit here
+if (deploy_only == True):
+    if (debug):
+        print('Exiting now for deploy_only mode. You can shift traffic later manually or with another CircleCI deployment.')
+    sys.exit(0)
 
-## first just do a 100% cutover
-if (new_service == 'blue'):
-    ctx['blue']['new_wt'] = 100
-    ctx['green']['new_wt'] = 0
-else:
-    ctx['blue']['new_wt'] = 0
-    ctx['green']['new_wt'] = 100
 
+## Traffic shifting cutover loop/func
+pct_change = math.floor(100/release_num_steps)
 if (debug):
-    print ('Moving blue tg -> ', ctx['blue']['new_wt'], 'and moving green tg -> ', ctx['green']['new_wt'])
+    print ('Setup pct_change = ', pct_change)
 
-mrr = lb.modify_rule(
-    RuleArn=rule,
-    Actions=[
-        {
-            'Type': 'forward',
-            'ForwardConfig': {
-                'TargetGroups': [
-                    {
-                        'TargetGroupArn': ctx['blue']['tg_arn'],
-                        'Weight': ctx['blue']['new_wt']
-                    },
-                    {
-                        'TargetGroupArn': ctx['green']['tg_arn'],
-                        'Weight': ctx['green']['new_wt']
-                    },
-                ],
-                'TargetGroupStickinessConfig': {
-                    'Enabled': True,
-                    'DurationSeconds': 60
+for x in range(1, release_num_steps + 1):
+
+    if (x == release_num_steps):
+        if (new_service == 'blue'):
+            ctx['blue']['new_wt'] = 100
+            ctx['green']['new_wt'] = 0
+        else:
+            ctx['blue']['new_wt'] = 0
+            ctx['green']['new_wt'] = 100
+    else:
+        if (new_service == 'blue'):
+            ctx['blue']['new_wt'] += pct_change
+            ctx['green']['new_wt'] -= pct_change
+        else:
+            ctx['blue']['new_wt'] -= pct_change
+            ctx['green']['new_wt'] += pct_change 
+
+    if (debug):
+        print ('Moving blue tg -> ', ctx['blue']['new_wt'], 'and moving green tg -> ', ctx['green']['new_wt'])
+
+    mrr = lb.modify_rule(
+        RuleArn=rule,
+        Actions=[
+            {
+                'Type': 'forward',
+                'ForwardConfig': {
+                    'TargetGroups': [
+                        {
+                            'TargetGroupArn': ctx['blue']['tg_arn'],
+                            'Weight': ctx['blue']['new_wt']
+                        },
+                        {
+                            'TargetGroupArn': ctx['green']['tg_arn'],
+                            'Weight': ctx['green']['new_wt']
+                        },
+                    ],
+                    'TargetGroupStickinessConfig': {
+                        'Enabled': True,
+                        'DurationSeconds': 60
+                    }
                 }
             }
-        }
-    ]
-)
-if(superuberdebug):
-    print('Modify_rule response: ')
-    pp.pprint(mrr)
+        ]
+    )
+        
+    if(superuberdebug):
+        print('Modify_rule response: ')
+        pp.pprint(mrr)
+
+    if (x == 1):
+        if (canary_delay > 0):
+            if (debug):
+                print('First step, sleeping for extra canary_delay = ', canary_delay, ' seconds')
+            time.sleep(canary_delay)
+
+    if (x != release_num_steps):
+        if (debug):
+            print('Sleeping for step_delay = ', step_delay, ' seconds')
+        time.sleep(step_delay)
+
 
 print('All done, enjoy!')
