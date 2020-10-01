@@ -169,6 +169,7 @@ resource "aws_lb_target_group" "blue" {
   }
 }
 
+# remove this if reusing, this hosts my blog on EC2
 resource "aws_lb_target_group" "blog" {
   name        = "apachecontainer-blog"
   port        = 80
@@ -252,6 +253,7 @@ resource "aws_lb_listener_rule" "host_based_routing_blue" {
   }
 }
 
+# remove this if reusing, this hosts my blog on EC2
 resource "aws_lb_listener_rule" "host_based_routing_blog" {
   listener_arn = aws_lb_listener.dev443.arn
   priority     = 87
