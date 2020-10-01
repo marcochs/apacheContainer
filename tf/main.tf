@@ -10,19 +10,22 @@ output "service_blue" {
 output "service_green" {
   value = aws_ecs_service.acgreen.id
 }
+
 output "tg_green" {
   value = aws_lb_target_group.green.id
 }
+
 output "tg_blue" {
   value = aws_lb_target_group.blue.id
 }
 
 output "fqdn_green" {
-       value = var.fqdn_green
-       }
+  value = var.fqdn_green
+}
+
 output "fqdn_blue" {
-       value = var.fqdn_blue
-       }
+  value = var.fqdn_blue
+}
 
 variable "vpc-id" {
   type    = string
@@ -43,10 +46,12 @@ variable "subnet-elb-us-east-1a-id" {
   type    = string
   default = "subnet-0f9f97be8ed75575a"
 }
+
 variable "subnet-elb-us-east-1b-id" {
   type    = string
   default = "subnet-074327b623eead742"
 }
+
 variable "subnet-elb-us-east-1c-id" {
   type    = string
   default = "subnet-0695e08573e70c5e7"
@@ -56,26 +61,51 @@ variable "subnet-private-us-east-1a-id" {
   type    = string
   default = "subnet-0b3ac8c90ce9c3126"
 }
+
 variable "subnet-private-us-east-1b-id" {
   type    = string
   default = "subnet-074fc05e463ca7de2"
 }
+
 variable "subnet-private-us-east-1c-id" {
   type    = string
   default = "subnet-033a6e87720fdf16d"
 }
+
 variable "elb-logs-bucket" {
   type    = string
   default = "logs-apachecontainer"
 }
+
 variable "fqdn_blue" {
-	 type = string
-	 default = "acdev-blue.cloudmindful.com"
-	 }
+  type    = string
+  default = "acdev-blue.cloudmindful.com"
+}
+
 variable "fqdn_green" {
-	 type = string
-	 default = "acdev-green.cloudmindful.com"
-	 }
+  type    = string
+  default = "acdev-green.cloudmindful.com"
+}
+
+variable "r53_zone_id" {
+  type    = string
+  default = "Z0798797FJ9OHRG3WUX2"
+}
+
+variable "r53_alb_cname" {
+  type    = string
+  default = "acdev.vpc1.custa-sbox1.cloudmindful.com"
+}
+
+variable "r53_alb_cname_blue" {
+  type    = string
+  default = "acdev-blue.vpc1.custa-sbox1.cloudmindful.com"
+}
+
+variable "r53_alb_cname_green" {
+  type    = string
+  default = "acdev-green.vpc1.custa-sbox1.cloudmindful.com"
+}
 
 resource "aws_lb" "dev" {
   name               = "apachecontainer-dev"
@@ -98,24 +128,24 @@ resource "aws_lb" "dev" {
 }
 
 resource "aws_route53_record" "devlb" {
-  zone_id = "Z0798797FJ9OHRG3WUX2"
-  name    = "acdev.vpc1.custa-sbox1.cloudmindful.com"
+  zone_id = var.r53_zone_id
+  name    = var.r53_alb_cname
   type    = "CNAME"
   ttl     = "300"
   records = ["${aws_lb.dev.dns_name}"]
 }
 
 resource "aws_route53_record" "devlb-blue" {
-  zone_id = "Z0798797FJ9OHRG3WUX2"
-  name    = "acdev-blue.vpc1.custa-sbox1.cloudmindful.com"
+  zone_id = var.r53_zone_id
+  name    = var.r53_alb_cname_blue
   type    = "CNAME"
   ttl     = "300"
   records = ["${aws_lb.dev.dns_name}"]
 }
 
 resource "aws_route53_record" "devlb-green" {
-  zone_id = "Z0798797FJ9OHRG3WUX2"
-  name    = "acdev-green.vpc1.custa-sbox1.cloudmindful.com"
+  zone_id = var.r53_zone_id
+  name    = var.r53_alb_cname_green
   type    = "CNAME"
   ttl     = "300"
   records = ["${aws_lb.dev.dns_name}"]
@@ -165,8 +195,8 @@ resource "aws_lb_listener" "dev443" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-#  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/e31e3b4a-fdfa-4be1-a9f8-bd32470b0077"
-  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/95c6d210-cee6-4370-bc08-c41e0e670736"
+  #  certificate_arn   = "arn:aws:acm:us-east-1:141517001380:certificate/e31e3b4a-fdfa-4be1-a9f8-bd32470b0077"
+  certificate_arn = "arn:aws:acm:us-east-1:141517001380:certificate/95c6d210-cee6-4370-bc08-c41e0e670736"
 
   default_action {
     type             = "forward"
@@ -354,11 +384,11 @@ resource "aws_ecs_service" "acblue" {
 }
 
 resource "aws_lb_target_group" "green" {
-  name        = "apachecontainer-green-tg${substr(uuid(), 0, 3)}"
-  port        = 80
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc-id
+  name                 = "apachecontainer-green-tg${substr(uuid(), 0, 3)}"
+  port                 = 80
+  protocol             = "HTTP"
+  target_type          = "ip"
+  vpc_id               = var.vpc-id
   deregistration_delay = 0
 
   lifecycle {

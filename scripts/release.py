@@ -29,6 +29,13 @@ parser.add_argument('-v','--verbose', action='count', dest='log_level', default=
 args = parser.parse_args()
 
 
+##
+## Globals
+##
+
+debug = 0
+uberdebug = 0
+superuberdebug = 0
 
 # these could be tightened but should work
 blue = re.compile('.*blue*')
@@ -49,9 +56,6 @@ ctx = {'blue':  {'svc_arn': '', 'svc_name': 'acblue',  'tg_arn': '', 'new_wt': 0
        'green': {'svc_arn': '', 'svc_name': 'acgreen', 'tg_arn': '', 'new_wt': 0, 'test_url': ''}}
 
 # process_args funct or subroutine perhaps with context 
-debug = 0
-uberdebug = 0
-superuberdebug = 0
 if args.log_level == 1:
     debug = 1
     print('Verbose mode on.')
